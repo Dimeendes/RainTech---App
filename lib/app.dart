@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'core/routes/app_routes.dart';
+import 'core/theme/app_theme.dart';
+import 'data/app_storage.dart';
+import 'data/hidrodata_api.dart';
+import 'data/water_repository.dart';
+import 'state/settings_state.dart';
+import 'state/water_data_state.dart';
+import 'state/alerts_state.dart';
+import 'state/mananciais_state.dart';
+
+/// Raiz do app: registra o estado global e configura tema e rotas.
+class RainTechApp extends StatelessWidget {
+  const RainTechApp({
+    super.key,
+    required this.repository,
+    required this.storage,
+  });
+
+  final WaterRepository repository;
+  final AppStorage storage;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SettingsState(storage)),
+        // Integração com o HidroData (Java); o endereço pode ser trocado nos Ajustes
+        ChangeNotifierProvider(
+          create: (_) => MananciaisState(
+            HidrodataApi(baseUrl: storage.hidrodataUrl),
+            storage: storage,
+          )..carregar(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WaterDataState(repository, storage)..load(),
+        ),
+        ChangeNotifierProxyProvider<WaterDataState, AlertsState>(
+          create: (_) => AlertsState(storage),
+          update: (_, data, alerts) => alerts!..updateFrom(data),
+        ),
+      ],
+      child: Consumer<SettingsState>(
+        builder: (context, settings, _) => MaterialApp(
+          title: 'RainTech',
+          debugShowCheckedModeBanner: false,
+          themeMode: settings.themeMode,
+          theme: AppTheme.light(highContrast: settings.highContrast),
+          darkTheme: AppTheme.dark(highContrast: settings.highContrast),
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: _UserTextScaler(media.textScaler, settings.fontScale),
+              ),
+              child: child!,
+            );
+          },
+          initialRoute: AppRoutes.home,
+          onGenerateRoute: AppRoutes.onGenerateRoute,
+        ),
+      ),
+    );
+  }
+}
+
+class _UserTextScaler extends TextScaler {
+  const _UserTextScaler(this.systemScaler, this.userScale);
+
+  final TextScaler systemScaler;
+  final double userScale;
+
+  @override
+  double scale(double fontSize) => systemScaler.scale(fontSize * userScale);
+
+  @override
+  double get textScaleFactor => systemScaler.scale(userScale);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _UserTextScaler &&
+      other.systemScaler == systemScaler &&
+      other.userScale == userScale;
+
+  @override
+  int get hashCode => Object.hash(systemScaler, userScale);
+}
