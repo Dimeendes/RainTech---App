@@ -32,6 +32,13 @@ class MananciaisState extends ChangeNotifier {
 
   // Alertas já vistos: só os que aparecerem depois da primeira carga geram aviso
   final Set<int> _idsConhecidos = {};
+  final Set<int> _idsAprovadosConhecidos = {};
+  List<AlertaHidrodata> _novosAvisos = const [];
+  int _versaoNovosAvisos = 0;
+
+  /// Avisos aprovados pelo gestor desde a última atualização (notificação do cidadão).
+  List<AlertaHidrodata> get novosAvisos => _novosAvisos;
+  int get versaoNovosAvisos => _versaoNovosAvisos;
   bool _primeiraCarga = true;
   List<AlertaHidrodata> _novosAlertas = const [];
   int _versaoNovosAlertas = 0;
@@ -68,6 +75,20 @@ class MananciaisState extends ChangeNotifier {
       _alertas.where((a) => a.ehReservatorio && a.pendente).toList();
   List<AlertaHidrodata> get validados =>
       _alertas.where((a) => a.ehReservatorio && !a.pendente).toList();
+
+  /// Avisos à população: só alertas APROVADOS pelo gestor (mais recentes primeiro).
+  List<AlertaHidrodata> get avisosConfirmados =>
+      _alertas.where((a) => a.ehReservatorio && a.aprovado).toList();
+
+  /// Aviso confirmado do mês atual de um sistema (null se não houver).
+  AlertaHidrodata? avisoAtivoDe(Manancial m) => avisosConfirmados
+      .where((a) => a.sensorId == m.sensorId && a.mesReferencia == m.mesReferencia)
+      .firstOrNull;
+
+  List<AlertaHidrodata> get avisosAtivos => [
+    for (final m in lidos)
+      if (avisoAtivoDe(m) != null) avisoAtivoDe(m)!,
+  ];
 
   AlertaHidrodata? alertaPorId(int id) =>
       _alertas.where((a) => a.id == id).firstOrNull;
@@ -121,6 +142,7 @@ class MananciaisState extends ChangeNotifier {
     _historicos = const {};
     _alertas = const [];
     _idsConhecidos.clear();
+    _idsAprovadosConhecidos.clear();
     _primeiraCarga = true;
     await carregar();
     return _conexao == ConexaoHidrodata.conectado ? null : _erro;
@@ -168,7 +190,11 @@ class MananciaisState extends ChangeNotifier {
     final novos = alertas
         .where((a) => a.ehReservatorio && a.pendente && !_idsConhecidos.contains(a.id))
         .toList();
+    final aprovados = alertas.where((a) => a.ehReservatorio && a.aprovado).toList();
+    final aprovadosNovos =
+        aprovados.where((a) => !_idsAprovadosConhecidos.contains(a.id)).toList();
     _idsConhecidos.addAll(alertas.map((a) => a.id));
+    _idsAprovadosConhecidos.addAll(aprovados.map((a) => a.id));
     if (_primeiraCarga) {
       _primeiraCarga = false; // alertas antigos não geram aviso ao abrir o app
       return;
@@ -176,6 +202,10 @@ class MananciaisState extends ChangeNotifier {
     if (novos.isNotEmpty) {
       _novosAlertas = novos;
       _versaoNovosAlertas++;
+    }
+    if (aprovadosNovos.isNotEmpty) {
+      _novosAvisos = aprovadosNovos;
+      _versaoNovosAvisos++;
     }
   }
 

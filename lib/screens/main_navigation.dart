@@ -6,6 +6,9 @@ import '../state/mananciais_state.dart';
 import '../state/settings_state.dart';
 import '../widgets/notificador_alertas.dart';
 import 'alerts/alerts_page.dart';
+import 'cidadao/cidadao_avisos_page.dart';
+import 'cidadao/cidadao_home_page.dart';
+import 'cidadao/cidadao_preparar_page.dart';
 import 'dashboards/dashboards_page.dart';
 import 'home_page.dart';
 import 'mananciais/mananciais_page.dart';
@@ -21,11 +24,17 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  static const _abaAlertas = 2;
-
   int _selectedIndex = 0;
 
-  // Mesmas 4 abas nas duas visões; muda só a fonte dos dados.
+  // Perfil Cidadão: linguagem simples, só avisos confirmados pela gestão.
+  static const _paginasCidadao = [
+    CidadaoHomePage(),
+    CidadaoAvisosPage(),
+    CidadaoPrepararPage(),
+    SettingsPage(),
+  ];
+
+  // Perfil Gestor, visão RMSP: dados reais via HidroData.
   static const _paginasRmsp = [
     MananciaisPage(),
     RmspDashboardsPage(),
@@ -33,6 +42,7 @@ class _MainNavigationState extends State<MainNavigation> {
     SettingsPage(),
   ];
 
+  // Perfil Gestor, visão Chennai: demonstração com base pública.
   static const _paginasChennai = [
     HomePage(),
     DashboardsPage(),
@@ -40,27 +50,38 @@ class _MainNavigationState extends State<MainNavigation> {
     SettingsPage(),
   ];
 
-  /// Botão "Ver" da notificação: abre os alertas da RMSP.
-  void _abrirAlertasRmsp() {
+  void _abrirAlertasGestor() {
     context.read<SettingsState>().setVisao(VisaoDados.rmsp);
-    setState(() => _selectedIndex = _abaAlertas);
+    setState(() => _selectedIndex = 2);
   }
+
+  void _abrirAvisosCidadao() => setState(() => _selectedIndex = 1);
 
   @override
   Widget build(BuildContext context) {
-    final visao = context.watch<SettingsState>().visao;
-    final pendentesChennai = context.watch<AlertsState>().pending.length;
-    final pendentesRmsp = context.watch<MananciaisState>().pendentes.length;
+    final settings = context.watch<SettingsState>();
+    final alertasChennai = context.watch<AlertsState>().pending.length;
+    final rmsp = context.watch<MananciaisState>();
 
-    final rmsp = visao == VisaoDados.rmsp;
-    final pages = rmsp ? _paginasRmsp : _paginasChennai;
-    final pending = rmsp ? pendentesRmsp : pendentesChennai;
+    final cidadao = settings.ehCidadao;
+    final visaoRmsp = settings.visao == VisaoDados.rmsp;
+    final pages = cidadao
+        ? _paginasCidadao
+        : visaoRmsp
+        ? _paginasRmsp
+        : _paginasChennai;
+    final contador = cidadao
+        ? rmsp.avisosAtivos.length
+        : visaoRmsp
+        ? rmsp.pendentes.length
+        : alertasChennai;
 
     return NotificadorAlertas(
-      onVerAlertas: _abrirAlertasRmsp,
+      onVerAlertasGestor: _abrirAlertasGestor,
+      onVerAvisosCidadao: _abrirAvisosCidadao,
       child: Scaffold(
         body: IndexedStack(
-          key: ValueKey(visao),
+          key: ValueKey('${settings.perfil.name}-${settings.visao.name}'),
           index: _selectedIndex,
           children: pages,
         ),
@@ -75,25 +96,44 @@ class _MainNavigationState extends State<MainNavigation> {
               selectedIcon: Icon(Icons.home),
               label: 'Início',
             ),
-            const NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(Icons.insights),
-              label: 'Painéis',
-            ),
-            NavigationDestination(
-              icon: Badge.count(
-                count: pending,
-                isLabelVisible: pending > 0,
-                child: const Icon(Icons.notifications_outlined),
+            if (cidadao)
+              NavigationDestination(
+                icon: Badge.count(
+                  count: contador,
+                  isLabelVisible: contador > 0,
+                  child: const Icon(Icons.campaign_outlined),
+                ),
+                selectedIcon: const Icon(Icons.campaign),
+                label: 'Avisos',
+                tooltip: '$contador avisos ativos',
+              )
+            else
+              const NavigationDestination(
+                icon: Icon(Icons.insights_outlined),
+                selectedIcon: Icon(Icons.insights),
+                label: 'Painéis',
               ),
-              selectedIcon: Badge.count(
-                count: pending,
-                isLabelVisible: pending > 0,
-                child: const Icon(Icons.notifications),
+            if (cidadao)
+              const NavigationDestination(
+                icon: Icon(Icons.checklist_outlined),
+                selectedIcon: Icon(Icons.checklist),
+                label: 'Preparar',
+              )
+            else
+              NavigationDestination(
+                icon: Badge.count(
+                  count: contador,
+                  isLabelVisible: contador > 0,
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                selectedIcon: Badge.count(
+                  count: contador,
+                  isLabelVisible: contador > 0,
+                  child: const Icon(Icons.notifications),
+                ),
+                label: 'Alertas',
+                tooltip: '$contador alertas aguardando revisão',
               ),
-              label: 'Alertas',
-              tooltip: '$pending alertas aguardando revisão',
-            ),
             const NavigationDestination(
               icon: Icon(Icons.tune),
               selectedIcon: Icon(Icons.tune),

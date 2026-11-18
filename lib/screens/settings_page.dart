@@ -102,6 +102,45 @@ class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           const SectionHeader(
+            eyebrow: 'Perfil de uso',
+            title: 'Para quem é o app agora',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Card(
+            child: Padding(
+              padding: AppSpacing.card,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SegmentedButton<PerfilUsuario>(
+                    key: const ValueKey('perfil-usuario'),
+                    segments: const [
+                      ButtonSegment(
+                        value: PerfilUsuario.cidadao,
+                        icon: Icon(Icons.person_outline),
+                        label: Text('Cidadão'),
+                      ),
+                      ButtonSegment(
+                        value: PerfilUsuario.gestor,
+                        icon: Icon(Icons.admin_panel_settings_outlined),
+                        label: Text('Gestor'),
+                      ),
+                    ],
+                    selected: {settings.perfil},
+                    onSelectionChanged: (selecao) => settings.setPerfil(selecao.first),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '${settings.perfil.descricao} Em produção, o perfil Gestor exigiria login institucional.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (!settings.ehCidadao) ...[
+          const SectionHeader(
             eyebrow: 'Fonte de dados',
             title: 'Visão do aplicativo',
           ),
@@ -138,6 +177,7 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
+          ],
           Card(
             child: SwitchListTile(
               key: const ValueKey('notificacoes-sistema'),
@@ -146,9 +186,9 @@ class SettingsPage extends StatelessWidget {
               subtitle: Text(
                 !notificacoesSistemaSuportadas
                     ? 'Disponível no navegador (Edge ou Chrome) e no Android. Nesta plataforma os novos alertas aparecem como aviso dentro do app.'
-                    : settings.notificacoesSistema
-                    ? 'Novos alertas da RMSP também chegam como notificação do sistema.'
-                    : 'Receba os novos alertas da RMSP mesmo com o app em segundo plano.',
+                    : settings.ehCidadao
+                    ? 'Receba uma notificação quando a gestão confirmar um aviso de abastecimento.'
+                    : 'Receba os novos alertas do modelo que aguardam a sua validação.',
               ),
               value: settings.notificacoesSistema && notificacoesSistemaPermitidas,
               onChanged: !notificacoesSistemaSuportadas

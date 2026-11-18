@@ -186,6 +186,16 @@ class AlertaHidrodata {
   final ValidacaoHidrodata? validacao;
 
   bool get pendente => validacao == null;
+  bool get aprovado => validacao?.aprovado ?? false;
+
+  /// Mês dos dados que geraram o alerta (ex.: 2025-06), lido da mensagem do HidroData.
+  String? get mesReferencia => RegExp(r' em (\d{4}-\d{2})').firstMatch(mensagem)?.group(1);
+
+  /// Mês de referência no formato 06/2025.
+  String? get mesReferenciaFormatado {
+    final mes = mesReferencia;
+    return mes == null ? null : '${mes.substring(5, 7)}/${mes.substring(0, 4)}';
+  }
   bool get ehReservatorio => tipoSensor == 'RESERVATORIO';
 
   factory AlertaHidrodata.fromJson(Map<String, dynamic> json) {

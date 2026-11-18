@@ -10,6 +10,7 @@ import '../state/alerts_state.dart';
 import '../state/water_data_state.dart';
 import '../widgets/alert_tile.dart';
 import '../widgets/info_banner.dart';
+import '../widgets/perfil_switcher.dart';
 import '../widgets/progress_tile.dart';
 import '../widgets/risk_card.dart';
 import '../widgets/section_header.dart';
@@ -28,6 +29,7 @@ class HomePage extends StatelessWidget {
         title: const Text('RainTech'),
         actions: [
           const VisaoSwitcher(),
+          const PerfilSwitcher(),
           IconButton(
             tooltip: 'Atualizar dados',
             onPressed: data.load,

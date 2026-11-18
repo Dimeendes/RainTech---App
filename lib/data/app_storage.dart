@@ -24,6 +24,7 @@ class AppStorage {
   static const _visaoKey = 'prefs.visao';
   static const _notificacoesKey = 'prefs.notificacoesSistema';
   static const _hidrodataUrlKey = 'prefs.hidrodataUrl';
+  static const _perfilKey = 'prefs.perfil';
   static const _alertReviewsKey = 'alerts.reviews';
   static const _reviewStorageConsentKey = 'privacy.reviewStorageConsent';
 
@@ -70,6 +71,11 @@ class AppStorage {
   String? get visao => _prefs.getString(_visaoKey);
 
   Future<void> setVisao(String value) => _prefs.setString(_visaoKey, value);
+
+  /// Perfil de uso: 'cidadao' ou 'gestor'.
+  String? get perfil => _prefs.getString(_perfilKey);
+
+  Future<void> setPerfil(String value) => _prefs.setString(_perfilKey, value);
 
   /// Endereço da API do HidroData escolhido nos Ajustes (null = padrão do build).
   String? get hidrodataUrl => _prefs.getString(_hidrodataUrlKey);

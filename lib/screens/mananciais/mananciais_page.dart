@@ -10,6 +10,7 @@ import '../../widgets/charts/trend_line_chart.dart';
 import '../../widgets/confidence_meter.dart';
 import '../../widgets/human_decision_banner.dart';
 import '../../widgets/info_banner.dart';
+import '../../widgets/perfil_switcher.dart';
 import '../../widgets/rmsp_estado.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/visao_switcher.dart';
@@ -27,6 +28,7 @@ class MananciaisPage extends StatelessWidget {
         title: const Text('RainTech • RMSP'),
         actions: [
           const VisaoSwitcher(),
+          const PerfilSwitcher(),
           IconButton(
             tooltip: 'Atualizar',
             icon: const Icon(Icons.refresh),

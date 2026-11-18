@@ -2,6 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../data/app_storage.dart';
 
+/// Para quem o app está sendo usado.
+enum PerfilUsuario {
+  cidadao(
+    'Cidadão',
+    'Situação da água em linguagem simples e avisos confirmados pela gestão, com orientações de preparo.',
+  ),
+  gestor(
+    'Gestor',
+    'Painéis técnicos, previsões do modelo e validação dos alertas antes de chegarem à população.',
+  );
+
+  const PerfilUsuario(this.rotulo, this.descricao);
+  final String rotulo;
+  final String descricao;
+}
+
 /// Qual conjunto de dados o app mostra.
 enum VisaoDados {
   rmsp('RMSP (Sabesp)', 'Dados reais de Cantareira e Alto Tietê via HidroData (Java).'),
@@ -26,6 +42,10 @@ class SettingsState extends ChangeNotifier {
       orElse: () => VisaoDados.rmsp,
     );
     _notificacoesSistema = _storage.notificacoesSistema;
+    _perfil = PerfilUsuario.values.firstWhere(
+      (perfil) => perfil.name == _storage.perfil,
+      orElse: () => PerfilUsuario.cidadao,
+    );
   }
 
   static const minFontScale = 0.85;
@@ -37,12 +57,15 @@ class SettingsState extends ChangeNotifier {
   late double _fontScale;
   late VisaoDados _visao;
   late bool _notificacoesSistema;
+  late PerfilUsuario _perfil;
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
   bool get highContrast => _highContrast;
   double get fontScale => _fontScale;
   VisaoDados get visao => _visao;
+  PerfilUsuario get perfil => _perfil;
+  bool get ehCidadao => _perfil == PerfilUsuario.cidadao;
 
   /// Notificações do sistema operacional (pelo navegador) para novos alertas.
   bool get notificacoesSistema => _notificacoesSistema;
@@ -76,5 +99,12 @@ class SettingsState extends ChangeNotifier {
     _notificacoesSistema = ativar;
     notifyListeners();
     await _storage.setNotificacoesSistema(ativar);
+  }
+
+  Future<void> setPerfil(PerfilUsuario perfil) async {
+    if (perfil == _perfil) return;
+    _perfil = perfil;
+    notifyListeners();
+    await _storage.setPerfil(perfil.name);
   }
 }
